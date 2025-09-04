@@ -77,11 +77,23 @@ def predict():
 
             interpreter.set_tensor(input_details[0]['index'], img_array)
             interpreter.invoke()
+            
             predictions = interpreter.get_tensor(output_details[0]['index'])
+            
+            # The output is still a numpy array
             predicted_class_index = np.argmax(predictions[0])
             predicted_class = CLASSES[predicted_class_index]
             confidence = float(predictions[0][predicted_class_index] * 100)
             description = CLASS_DESCRIPTIONS.get(predicted_class, "No detailed description available.")
+
+            # --- Start of the added code to fix the TensorFlow Lite error ---
+            # Set the input tensor to a zero array to clear internal references for the next prediction
+            interpreter.set_tensor(input_details[0]['index'], np.zeros(input_details[0]['shape'], dtype=np.float32))
+            
+            # Re-invoke to clear the output tensor and finalize the reset
+            interpreter.invoke()
+            interpreter.get_tensor(output_details[0]['index'])
+            # --- End of the added code ---
 
             return jsonify({
                 "class": predicted_class.upper(),
