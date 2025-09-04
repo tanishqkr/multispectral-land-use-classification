@@ -1,19 +1,18 @@
 import os
 import io
-import tensorflow as tf
-import numpy as np
 import json
 import gc  # Import the garbage collector
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+import tensorflow as tf
+import numpy as np
 from PIL import Image
 
 # Initialize the Flask application
 app = Flask(__name__)
 # Allow cross-origin requests from the frontend
-CORS(app, origins=[
-    "https://satellite-image-classifier.vercel.app"      # For local dev
-])
+CORS(app)
+
 # The path to the TFLite model file
 MODEL_PATH = "model.tflite"
 
@@ -40,12 +39,14 @@ DESCRIPTIONS = {
 def load_model():
     print("Loading TFLite model...")
     try:
+        # Load the TFLite model using the correct interpreter
         interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
         interpreter.allocate_tensors()
         print("TFLite model loaded successfully.")
         return interpreter
     except Exception as e:
         print(f"Error loading model: {e}")
+        # Return None to indicate the model failed to load
         return None
 
 # Load the model and get input/output details
@@ -55,10 +56,11 @@ if interpreter:
     output_details = interpreter.get_output_details()
     input_shape = input_details[0]['shape']
 else:
+    # If the model fails to load, set details to None to prevent further errors
     input_details = None
     output_details = None
     input_shape = None
-
+    
 # Function to preprocess the image for the model
 def preprocess_image(image):
     if input_shape is None:
@@ -72,6 +74,10 @@ def preprocess_image(image):
 
 @app.route('/predict', methods=['POST'])
 def predict():
+    # Check if the model was loaded successfully before proceeding
+    if interpreter is None:
+        return jsonify({'error': 'Backend is not ready. Model failed to load.'}), 503
+
     try:
         # Check if a file was uploaded
         if 'file' not in request.files:
@@ -82,6 +88,11 @@ def predict():
         
         # Open the image file from the request
         image = Image.open(io.BytesIO(file.read())).convert('RGB')
+        
+        # Add the image validation logic here
+        width, height = image.size
+        if width != height or width < 64: 
+            return jsonify({"error": "Please upload a valid satellite image. Images must be square and at least 64x64 pixels."}), 400
         
         # Preprocess the image
         input_data = preprocess_image(image)
@@ -95,9 +106,9 @@ def predict():
         # Get the output tensor from the model
         output_data = interpreter.get_tensor(output_details[0]['index'])
         
-        # --- THE FIX ---
         # Explicitly delete the input data to prevent memory leaks
         del input_data
+        gc.collect() # Add garbage collection
         
         # Get the class index with the highest probability
         prediction_index = np.argmax(output_data)
