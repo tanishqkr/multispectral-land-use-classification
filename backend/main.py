@@ -118,5 +118,6 @@ def home():
     return "Backend is running!"
 
 if __name__ == '__main__':
-    # Start the Flask app
-    app.run(host='0.0.0.0', port=os.environ.get('PORT', 5050))
+    # Start the Flask app using the PORT from the environment
+    port = int(os.environ.get('PORT', 5000))
+    app.run(debug=True, host='0.0.0.0', port=port)
