@@ -10,7 +10,7 @@ import os
 # --- Configuration ---
 # Set the image size to match the model's expected input shape (128x128)
 IMAGE_SIZE = (128, 128)
-MODEL_PATH = 'models/single_model.h5'
+MODEL_PATH = 'models/single_model_quantized.tflite'
 CLASSES = ['AnnualCrop', 'Industrial', 'Pasture', 'Residential', 'SeaLake', 'Highway', 'River'] 
 
 # --- Class Descriptions for Detailed Analysis ---
@@ -29,8 +29,23 @@ app = Flask(__name__)
 CORS(app)
 
 # --- Load the model once to avoid reloading it on every request ---
-MODEL_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), MODEL_PATH))
-model = tf.keras.models.load_model(MODEL_PATH)
+try:
+    # Use the absolute path to the TFLite model
+    MODEL_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), MODEL_PATH))
+    
+    # Load the TFLite model and allocate tensors.
+    interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
+    interpreter.allocate_tensors()
+    
+    # Get input and output details
+    input_details = interpreter.get_input_details()
+    output_details = interpreter.get_output_details()
+    
+    print("TFLite model loaded successfully.")
+
+except Exception as e:
+    print(f"Error loading TFLite model: {e}")
+    interpreter = None
 
 @app.route('/predict', methods=['POST'])
 def predict():
@@ -57,9 +72,12 @@ def predict():
                 img = img.convert('RGB')
                 
             img_array = np.array(img) / 255.0
+            img_array = img_array.astype(np.float32)
             img_array = np.expand_dims(img_array, axis=0) 
 
-            predictions = model.predict(img_array)
+            interpreter.set_tensor(input_details[0]['index'], img_array)
+            interpreter.invoke()
+            predictions = interpreter.get_tensor(output_details[0]['index'])
             predicted_class_index = np.argmax(predictions[0])
             predicted_class = CLASSES[predicted_class_index]
             confidence = float(predictions[0][predicted_class_index] * 100)
