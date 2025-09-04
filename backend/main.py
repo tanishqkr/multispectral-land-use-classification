@@ -18,22 +18,20 @@ MODEL_PATH = "models/single_model_quantized.tflite"
 
 # Labels + descriptions
 LABELS = [
-    'AnnualCrop', 'Coastal', 'Forest', 'Highway', 'Industrial',
-    'Pasture', 'PermanentCrop', 'River', 'SeaLake', 'Urban'
+    'AnnualCrop', 'Industrial', 'Pasture',
+    'Residential', 'SeaLake', 'Highway', 'River'
 ]
 
 DESCRIPTIONS = {
-    'AnnualCrop': 'This image shows land used for growing crops that are harvested once a year.',
-    'Coastal': 'The analysis reveals a distinct coastline with sandy beaches, shallow waters, and coastal vegetation.',
-    'Forest': 'Identifies a dense forested area characterized by a healthy canopy and a river system.',
-    'Highway': 'This image contains a clear representation of a highway or major road system.',
-    'Industrial': 'Shows an industrial area, likely containing factories, warehouses, or warehouses.',
-    'Pasture': 'This image depicts land covered with grass and low plants suitable for grazing animals.',
-    'PermanentCrop': 'The image reveals land with long-term crops such as orchards or vineyards.',
-    'River': 'A river is visible in this image, characterized by a winding body of water flowing through the landscape.',
-    'SeaLake': 'This image contains a large body of water, indicating the presence of a sea or lake.',
-    'Urban': 'The analysis identifies a dense urban landscape, with a high concentration of man-made structures.'
+    'AnnualCrop': 'Land used for crops harvested once a year, usually fields with cultivated plants.',
+    'Industrial': 'An industrial area with factories, warehouses, or other man-made infrastructure.',
+    'Pasture': 'Grassland or open field suitable for grazing animals.',
+    'Residential': 'Area with housing and residential structures, usually mixed with roads and small vegetation.',
+    'SeaLake': 'Large body of water — either a sea or a lake, with a distinct shoreline.',
+    'Highway': 'A major road system with multiple lanes and paved surfaces.',
+    'River': 'A winding body of flowing water, often with riparian vegetation along the banks.'
 }
+
 
 # Load TFLite model once
 def load_model():
