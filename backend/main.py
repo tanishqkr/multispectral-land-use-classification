@@ -11,8 +11,9 @@ from PIL import Image
 # Initialize the Flask application
 app = Flask(__name__)
 # Allow cross-origin requests from the frontend
-CORS(app)
-
+CORS(app, origins=[
+    "https://satellite-image-classifier.vercel.app"      # For local dev
+])
 # The path to the TFLite model file
 MODEL_PATH = "model.tflite"
 

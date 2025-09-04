@@ -39,7 +39,7 @@
             text-align: center;
             padding: 2rem;
             position: relative;
-            background-image: url('assets/landing.jpg');
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 1440 810"><rect width="100%" height="100%" fill="%23121212" /><defs><radialGradient id="grad1" cx="50%" cy="50%" r="50%" fx="50%" fy="50%"><stop offset="0%" style="stop-color:%2300e0c7;stop-opacity:0.2" /><stop offset="100%" style="stop-color:%23121212;stop-opacity:0" /></radialGradient></defs><rect width="100%" height="100%" fill="url(%23grad1)" /><circle cx="720" cy="405" r="300" stroke="%2300e0c7" stroke-width="1" fill="none" opacity="0.1" /><circle cx="720" cy="405" r="350" stroke="%2364ffda" stroke-width="0.5" fill="none" opacity="0.1" /></svg>');
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
@@ -310,6 +310,27 @@
             line-height: 1.6;
         }
 
+        /* Message Box */
+        .message-box {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #2D3748;
+            color: white;
+            padding: 15px 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+            pointer-events: none;
+        }
+
+        .message-box.visible {
+            opacity: 1;
+        }
+
         /* Examples Section */
         .examples {
             padding: 6rem 2rem;
@@ -486,6 +507,8 @@
     </style>
 </head>
 <body>
+    <div id="message-box" class="message-box"></div>
+
     <main class="main-content">
         <section class="hero">
             <div class="hero-content">
@@ -551,23 +574,23 @@
                 <h2 class="section-title">Example Analyses</h2>
                 <div class="examples-grid">
                     <div class="example-card">
-                        <img src="assets/coastal.jpg" alt="Coastal terrain" class="example-image">
+                        <img src="https://placehold.co/350x200/E5E7EB/4B5563?text=Coastal" alt="Coastal terrain" class="example-image">
                         <div class="example-content">
                             <span class="example-tag">COASTAL</span>
                             <p>The analysis reveals a distinct coastline with sandy beaches, shallow waters, and coastal vegetation. The AI indicates active sedimentary processes like erosion and deposition along the shoreline.</p>
                         </div>
                     </div>
                     <div class="example-card">
-                        <img src="assets/mountains.jpg" alt="Mountainous terrain" class="example-image">
+                        <img src="https://placehold.co/350x200/E5E7EB/4B5563?text=Urban" alt="Urban terrain" class="example-image">
                         <div class="example-content">
-                            <span class="example-tag">MOUNTAINOUS</span>
-                            <p>Deep analysis reveals rugged mountainous terrain with extracted peaks, deep valleys, and varied geological formations, suggesting ancient tectonic activity.</p>
+                            <span class="example-tag">URBAN</span>
+                            <p>Deep analysis reveals a dense urban landscape, with a high concentration of buildings, roads, and other man-made structures. The area is highly developed with little natural vegetation.</p>
                         </div>
                     </div>
                     <div class="example-card">
-                        <img src="assets/forest.jpg" alt="Forest terrain" class="example-image">
+                        <img src="https://placehold.co/350x200/E5E7EB/4B5563?text=Forest" alt="Forest terrain" class="example-image">
                         <div class="example-content">
-                            <span class="example-tag">FOREST/WOODLAND</span>
+                            <span class="example-tag">FOREST</span>
                             <p>Identifies a dense forested area characterized by a healthy canopy and a river system, indicating rich biodiversity and stable ecosystem.</p>
                         </div>
                     </div>
@@ -594,41 +617,24 @@
     </footer>
 
     <script>
+        // Global utility to show messages
+        function showMessage(text, duration = 3000) {
+            const messageBox = document.getElementById('message-box');
+            messageBox.textContent = text;
+            messageBox.classList.add('visible');
+            setTimeout(() => {
+                messageBox.classList.remove('visible');
+            }, duration);
+        }
+
         // File upload functionality
         const uploadArea = document.getElementById('upload-area');
         const fileInput = document.getElementById('file-input');
         const primaryResult = document.getElementById('primary-result');
         const detailedAnalysis = document.getElementById('detailed-analysis');
-        // This is a placeholder for where the URL is defined
+        
+        // This is the correct way to get the URL dynamically
         const backendUrl = "https://satellite-image-classifier.onrender.com";
-
-        fileInput.addEventListener('change', async (event) => {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            // The form data is prepared here
-            const formData = new FormData();
-            formData.append('file', file);
-
-            try {
-                // The URL is used in the fetch request here
-                const response = await fetch(`${backendUrl}/predict`, {
-                    method: 'POST',
-                    body: formData,
-                });
-
-                // The rest of the code processes the response
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                const data = await response.json();
-                console.log(data);
-
-            } catch (error) {
-                console.error("Error during prediction:", error);
-            }
-        });
 
         // Reset upload panel to initial state
         function resetUploadPanel() {
@@ -645,13 +651,13 @@
             browseBtn.textContent = 'Browse Files';
         }
 
-        // Example Images Configuration
+        // Example Images Configuration (with public URLs)
         const exampleImages = {
-            'Sea / Lake': 'assets/SeaLake_10.jpg',
-            'Annual Crop': 'assets/AnnualCrop_4.jpg',
-            'Pasture': 'assets/Pasture_3.jpg',
-            'Industrial': 'assets/Industrial_4.jpg',
-            'River': 'assets/River_3.jpg'
+            'Annual Crop': 'https://placehold.co/350x200/E5E7EB/4B5563?text=Annual+Crop',
+            'Forest': 'https://placehold.co/350x200/E5E7EB/4B5563?text=Forest',
+            'River': 'https://placehold.co/350x200/E5E7EB/4B5563?text=River',
+            'Urban': 'https://placehold.co/350x200/E5E7EB/4B5563?text=Urban',
+            'Sea / Lake': 'https://placehold.co/350x200/E5E7EB/4B5563?text=Sea+%2F+Lake'
         };
 
         // Build Dropdown and Insert into Upload Panel
@@ -699,7 +705,7 @@
                     handleFile(file);
                 } catch (error) {
                     console.error('Failed to load example image:', error);
-                    alert('Failed to load example image. Please try again.');
+                    showMessage('Failed to load example image. Please try again.');
                 }
             });
 
@@ -713,7 +719,7 @@
             resetUploadPanel();
 
             if (!file.type.startsWith('image/')) {
-                alert('Please select a valid image file.');
+                showMessage('Please select a valid image file.');
                 return;
             }
 
@@ -745,7 +751,7 @@
                 const formData = new FormData();
                 formData.append('file', file);
 
-                // This is the updated line
+                // Updated fetch call using a relative path
                 const response = await fetch(`${backendUrl}/predict`, {
                     method: 'POST',
                     body: formData,
@@ -753,7 +759,7 @@
 
                 if (!response.ok) {
                     const errorData = await response.json();
-                    throw new Error(errorData.error || 'Analysis failed');
+                    throw new Error(errorData.error || `Analysis failed with status: ${response.status}`);
                 }
 
                 const data = await response.json();
@@ -774,6 +780,7 @@
                 primaryResult.textContent = 'ERROR';
                 detailedAnalysis.textContent = error.message;
                 resetUploadPanel();
+                showMessage('Analysis failed. Please check the console for details.', 5000);
             }
         }
 
