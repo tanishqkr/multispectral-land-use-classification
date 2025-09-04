@@ -1,135 +1,121 @@
 import os
 import io
 import json
-import gc  # Import the garbage collector
+import gc
+import threading
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import tensorflow as tf
 import numpy as np
 from PIL import Image
 
-# Initialize the Flask application
+# Initialize Flask
 app = Flask(__name__)
-# Allow cross-origin requests from the frontend
 CORS(app)
 
-# The updated path to the TFLite model file
+# Path to your TFLite model
 MODEL_PATH = "models/single_model_quantized.tflite"
 
-# Define the labels and descriptions for the model's output
+# Labels + descriptions
 LABELS = [
     'AnnualCrop', 'Coastal', 'Forest', 'Highway', 'Industrial',
     'Pasture', 'PermanentCrop', 'River', 'SeaLake', 'Urban'
 ]
 
 DESCRIPTIONS = {
-    'AnnualCrop': 'This image shows land used for growing crops that are harvested once a year. The area appears to be a field with cultivated plants, often with distinct rows or patches.',
-    'Coastal': 'The analysis reveals a distinct coastline with sandy beaches, shallow waters, and coastal vegetation. The AI indicates active sedimentary processes like erosion and deposition along the shoreline.',
-    'Forest': 'Identifies a dense forested area characterized by a healthy canopy and a river system, indicating rich biodiversity and a stable ecosystem.',
-    'Highway': 'This image contains a clear representation of a highway or major road system, identified by its distinct paved surface and multi-lane structure.',
-    'Industrial': 'Shows an industrial area, likely containing factories, warehouses, large storage tanks, or complex machinery. The terrain is dominated by man-made structures and hard surfaces.',
-    'Pasture': 'This image depicts land covered with grass and other low plants suitable for grazing animals. The area is likely an open field or grassland.',
-    'PermanentCrop': 'The image reveals land with crops that remain planted for many years, such as fruit orchards, vineyards, or plantations. The vegetation shows a consistent and long-term pattern.',
-    'River': 'A river is visible in this image, characterized by a winding body of water flowing through the landscape. The surrounding area may show signs of erosion or riparian vegetation.',
-    'SeaLake': 'This image contains a large body of water, indicating the presence of a sea or lake. It is characterized by a distinct shoreline and uniform water surface.',
-    'Urban': 'The analysis identifies a dense urban landscape, with a high concentration of buildings, roads, and other man-made structures. The area is highly developed with little natural vegetation.'
+    'AnnualCrop': 'This image shows land used for growing crops that are harvested once a year.',
+    'Coastal': 'The analysis reveals a distinct coastline with sandy beaches, shallow waters, and coastal vegetation.',
+    'Forest': 'Identifies a dense forested area characterized by a healthy canopy and a river system.',
+    'Highway': 'This image contains a clear representation of a highway or major road system.',
+    'Industrial': 'Shows an industrial area, likely containing factories, warehouses, or warehouses.',
+    'Pasture': 'This image depicts land covered with grass and low plants suitable for grazing animals.',
+    'PermanentCrop': 'The image reveals land with long-term crops such as orchards or vineyards.',
+    'River': 'A river is visible in this image, characterized by a winding body of water flowing through the landscape.',
+    'SeaLake': 'This image contains a large body of water, indicating the presence of a sea or lake.',
+    'Urban': 'The analysis identifies a dense urban landscape, with a high concentration of man-made structures.'
 }
 
-# Load the TFLite model once when the application starts
+# Load TFLite model once
 def load_model():
-    print("Loading TFLite model...")
     try:
-        # Load the TFLite model using the correct interpreter
         interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
         interpreter.allocate_tensors()
-        print("TFLite model loaded successfully.")
+        print("✅ Model loaded successfully")
         return interpreter
     except Exception as e:
-        print(f"Error loading model: {e}")
-        # Return None to indicate the model failed to load
+        print(f"❌ Error loading model: {e}")
         return None
 
-# Load the model and get input/output details
 interpreter = load_model()
 if interpreter:
     input_details = interpreter.get_input_details()
     output_details = interpreter.get_output_details()
     input_shape = input_details[0]['shape']
 else:
-    # If the model fails to load, set details to None to prevent further errors
     input_details = None
     output_details = None
     input_shape = None
-    
-# Function to preprocess the image for the model
+
+# Thread lock for concurrency safety
+interpreter_lock = threading.Lock()
+
+# Preprocess image
 def preprocess_image(image):
     if input_shape is None:
-        raise ValueError("Model not loaded, cannot preprocess image.")
-    # Resize the image to the model's required input size
+        raise ValueError("Model not loaded.")
     img = image.resize((input_shape[1], input_shape[2]))
-    # Convert to a numpy array and normalize pixel values to 0-1
     img_array = np.array(img, dtype=np.float32) / 255.0
-    # Add a batch dimension to match the model's input shape
     return np.expand_dims(img_array, axis=0)
 
 @app.route('/predict', methods=['POST'])
 def predict():
-    # Check if the model was loaded successfully before proceeding
     if interpreter is None:
         return jsonify({'error': 'Backend is not ready. Model failed to load.'}), 503
 
     try:
-        # Check if a file was uploaded
         if 'file' not in request.files:
-            return jsonify({'error': 'No file part in the request'}), 400
+            return jsonify({'error': 'No file part in request'}), 400
         file = request.files['file']
         if file.filename == '':
             return jsonify({'error': 'No selected file'}), 400
-        
-        # Open the image file from the request
+
         image = Image.open(io.BytesIO(file.read())).convert('RGB')
-        
-        # Add the image validation logic here
+
         width, height = image.size
-        if width != height or width < 64: 
-            return jsonify({"error": "Please upload a valid satellite image. Images must be square and at least 64x64 pixels."}), 400
-        
-        # Preprocess the image
+        if width != height or width < 64:
+            return jsonify({"error": "Please upload a square satellite image of at least 64x64 pixels."}), 400
+
         input_data = preprocess_image(image)
-        
-        # Set the tensor for inference
-        interpreter.set_tensor(input_details[0]['index'], input_data)
-        
-        # Run inference on the model
-        interpreter.invoke()
-        
-        # Get the output tensor from the model
-        output_data = interpreter.get_tensor(output_details[0]['index'])
-        
-        # Explicitly delete the input data to prevent memory leaks
+
+        # Thread-safe inference
+        with interpreter_lock:
+            interpreter.set_tensor(input_details[0]['index'], input_data)
+            interpreter.invoke()
+            output_data = interpreter.get_tensor(output_details[0]['index']).copy()
+
         del input_data
-        gc.collect() # Add garbage collection
-        
-        # Get the class index with the highest probability
-        prediction_index = np.argmax(output_data)
+        gc.collect()
+
+        prediction_index = int(np.argmax(output_data))
         predicted_class = LABELS[prediction_index]
-        description = DESCRIPTIONS.get(predicted_class, 'No description available.')
-        
-        # Return the prediction results as JSON
+        description = DESCRIPTIONS.get(predicted_class, "No description available.")
+
+        # Confidence scores as dict {label: prob}
+        confidences = {LABELS[i]: float(output_data[0][i]) for i in range(len(LABELS))}
+
         return jsonify({
             'class': predicted_class,
-            'description': description
+            'description': description,
+            'confidence': confidences
         })
 
     except Exception as e:
-        # Catch any errors and return a helpful message
-        return jsonify({'error': f'An error occurred during prediction: {str(e)}'}), 500
+        return jsonify({'error': f'Prediction failed: {str(e)}'}), 500
 
 @app.route('/')
 def home():
     return "Backend is running!"
 
 if __name__ == '__main__':
-    # Start the Flask app using the PORT from the environment
     port = int(os.environ.get('PORT', 5000))
     app.run(debug=True, host='0.0.0.0', port=port)
