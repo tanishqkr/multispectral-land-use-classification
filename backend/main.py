@@ -13,8 +13,8 @@ app = Flask(__name__)
 # Allow cross-origin requests from the frontend
 CORS(app)
 
-# The path to the TFLite model file
-MODEL_PATH = "model.tflite"
+# The updated path to the TFLite model file
+MODEL_PATH = "models/single_model_quantized.tflite"
 
 # Define the labels and descriptions for the model's output
 LABELS = [
