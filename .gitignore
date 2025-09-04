@@ -1,0 +1,26 @@
+# Gitignore generated for a Python/ML project
+
+# --- Virtual Environment ---
+# Ignore the Python virtual environment folder
+venv/
+.venv/
+
+# --- Large Files and Data ---
+# Your large dataset used for training
+data/
+
+# --- IDE and OS Files ---
+# Ignore common IDE files (e.g., VS Code)
+.vscode/
+
+# Ignore macOS system files
+.DS_Store
+
+# --- Logs and Cache ---
+# Ignore any log files or temporary cache folders
+logs/
+__pycache__/
+
+# --- Jupyter Notebooks ---
+# Ignore notebook checkpoints
+.ipynb_checkpoints/
