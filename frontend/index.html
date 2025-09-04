@@ -385,6 +385,9 @@
             font-size: 0.9rem;
             color: #B0B0B0;
         }
+        footer:last-of-type {
+            display: none !important;
+        }
 
         .github-link {
             display: inline-flex;
@@ -596,6 +599,36 @@
         const fileInput = document.getElementById('file-input');
         const primaryResult = document.getElementById('primary-result');
         const detailedAnalysis = document.getElementById('detailed-analysis');
+        // This is a placeholder for where the URL is defined
+        const backendUrl = "https://satellite-image-classifier.onrender.com";
+
+        fileInput.addEventListener('change', async (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            // The form data is prepared here
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                // The URL is used in the fetch request here
+                const response = await fetch(`${backendUrl}/predict`, {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                // The rest of the code processes the response
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log(data);
+
+            } catch (error) {
+                console.error("Error during prediction:", error);
+            }
+        });
 
         // Reset upload panel to initial state
         function resetUploadPanel() {
@@ -712,7 +745,8 @@
                 const formData = new FormData();
                 formData.append('file', file);
 
-                const response = await fetch('http://127.0.0.1:5050/predict', {
+                // This is the updated line
+                const response = await fetch(`${backendUrl}/predict`, {
                     method: 'POST',
                     body: formData,
                 });
