@@ -28,10 +28,10 @@ If you want to run this project locally on your laptop, you will need to make a 
 │   ├── main.py
 │   ├── models/
 │   │   └── single_model_quantized.tflite
+    └── requirements.txt
 ├── frontend/
 │   └── index.html
 └── README.md
-└── requirements.txt
 
 ```
 
@@ -44,7 +44,7 @@ If you want to run this project locally on your laptop, you will need to make a 
 ```
 git clone https://github.com/your-username/satellite-image-classifier.git
 cd satellite-image-classifier
-pip install -r requirements.txt
+
 ```
 
 2. Setup backend
@@ -53,6 +53,7 @@ pip install -r requirements.txt
 cd backend
 python -m venv venv
 source venv/bin/activate   # Windows: venv\Scripts\activate
+pip install -r requirements.txt
 ```
 
 requirements.txt should contain:
