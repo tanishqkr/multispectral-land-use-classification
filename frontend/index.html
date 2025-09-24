@@ -521,6 +521,14 @@
         <section class="tool-section" id="tool">
             <div class="container">
                 <h2 class="section-title">AI Image Analysis Tool</h2>
+                
+                <!-- Add this simple loading notice HERE -->
+                <div style="text-align: center; padding: 1rem 2rem; background: rgba(0, 224, 199, 0.1); margin: 2rem auto; max-width: 800px; border-radius: 8px;">
+                    <p style="color: #00E0C7; font-size: 0.9rem; margin: 0;">
+                        <strong>Note:</strong> This is a free hosted service and may take up to 90 seconds to load initially.
+                    </p>
+                </div>
+
                 <div class="tool-grid">
                     <div class="upload-panel" id="upload-area">
                         <div class="upload-icon">☁️</div>
@@ -776,7 +784,7 @@
                 resetUploadPanel();
             }
         }
-
+        
         // Initialize on DOM Load
         window.addEventListener('DOMContentLoaded', () => {
             console.log('DOM fully loaded, setting up listeners');
