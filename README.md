@@ -78,10 +78,10 @@ The backend will be available at
 4. Fix the frontend
 
 Open frontend/index.html.
-Find the line:
+Find the variable:
 
 ```
-const backendUrl = "https://satellite-image-classifier.onrender.com";
+const backendUrl = "";
 ```
 
 Change it to:
