@@ -11,7 +11,7 @@ from PIL import Image
 
 # Initialize Flask
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/predict": {"origins": "https://satellite-image-classifier.vercel.app"}})
 
 # Path to your TFLite model
 MODEL_PATH = "models/single_model_quantized.tflite"
@@ -113,6 +113,10 @@ def predict():
 @app.route('/')
 def home():
     return "Backend is running!"
+
+@app.route('/health', methods=['GET'])
+def health():
+    return jsonify({"status": "healthy"}), 200
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
